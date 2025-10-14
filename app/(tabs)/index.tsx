@@ -74,6 +74,12 @@ export default function HomeScreen() {
           <ThemedText type="defaultSemiBold">app-example</ThemedText>.
         </ThemedText>
       </ThemedView>
+      <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">Add Activity</ThemedText>
+        <Link href="/add-activity" asChild>
+            <ThemedText style={styles.link}>Add activity</ThemedText>
+        </Link>
+        </ThemedView>
     </ParallaxScrollView>
   );
 }
@@ -95,4 +101,16 @@ const styles = StyleSheet.create({
     left: 0,
     position: 'absolute',
   },
+  link: {
+  marginTop: 15,
+  paddingVertical: 15,
+  paddingHorizontal: 30,
+  backgroundColor: '#007AFF',
+  color: '#fff',
+  borderRadius: 8,
+  textAlign: 'center',
+  fontSize: 16,
+  fontWeight: 'bold',
+  overflow: 'hidden',
+},
 });
