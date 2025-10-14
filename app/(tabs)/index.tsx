@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Image, StyleSheet, FlatList } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { Image, StyleSheet, Platform } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback } from 'react';
+import { FlashList } from '@shopify/flash-list';
 
 import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
@@ -63,29 +63,48 @@ export default function HomeScreen() {
             No activities yet. Add your first one!
           </ThemedText>
         ) : (
-          <FlatList
-            data={activities}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <ThemedView style={styles.activityItem}>
-                <ThemedText style={styles.stepsText}>
-                  🚶 {item.steps.toLocaleString()} steps
-                </ThemedText>
-                <ThemedText style={styles.dateText}>
-                  {formatDate(item.date)}
-                </ThemedText>
-              </ThemedView>
-            )}
-            scrollEnabled={false}
-          />
+          <ThemedView style={styles.listContainer}>
+            <FlashList
+              data={activities}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <ThemedView style={styles.activityItem}>
+                  <ThemedText style={styles.stepsText}>
+                    🚶 {item.steps.toLocaleString()} steps
+                  </ThemedText>
+                  <ThemedText style={styles.dateText}>
+                    {formatDate(item.date)}
+                  </ThemedText>
+                </ThemedView>
+              )}
+              estimatedItemSize={80}
+              showsVerticalScrollIndicator={true}
+            />
+          </ThemedView>
         )}
       </ThemedView>
 
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Add Activity</ThemedText>
+        <ThemedText type="subtitle">Add New Activity</ThemedText>
         <Link href="/add-activity" asChild>
           <ThemedText style={styles.link}>Add activity</ThemedText>
         </Link>
+      </ThemedView>
+
+      <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
+        <ThemedText>
+          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
+          Press{' '}
+          <ThemedText type="defaultSemiBold">
+            {Platform.select({
+              ios: 'cmd + d',
+              android: 'cmd + m',
+              web: 'F12',
+            })}
+          </ThemedText>{' '}
+          to open developer tools.
+        </ThemedText>
       </ThemedView>
     </ParallaxScrollView>
   );
@@ -125,6 +144,10 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     fontSize: 16,
     opacity: 0.6,
+  },
+  listContainer: {
+    height: 300, // Fixed height for scrolling
+    marginVertical: 10,
   },
   activityItem: {
     backgroundColor: 'rgba(0, 122, 255, 0.1)',
