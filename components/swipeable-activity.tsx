@@ -1,7 +1,6 @@
 import { useRef, useImperativeHandle, forwardRef } from 'react';
-import { StyleSheet, Animated, Pressable, View } from 'react-native';
+import { StyleSheet, Animated, Pressable, View, Text } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
-import { ThemedText } from '@/components/themed-text';
 
 interface SwipeableActivityProps {
   id: number;
@@ -19,9 +18,7 @@ export const SwipeableActivity = forwardRef<SwipeableActivityRef, SwipeableActiv
   ({ id, steps, date, onDelete, onSwipeStart }, ref) => {
     const translateX = useRef(new Animated.Value(0)).current;
     const offsetX = useRef(0);
-    const isOpen = useRef(false);
 
-    // Expose close method to parent
     useImperativeHandle(ref, () => ({
       close: () => {
         Animated.spring(translateX, {
@@ -33,7 +30,6 @@ export const SwipeableActivity = forwardRef<SwipeableActivityRef, SwipeableActiv
         translateX.setOffset(0);
         translateX.setValue(0);
         offsetX.current = 0;
-        isOpen.current = false;
       },
     }));
 
@@ -46,21 +42,16 @@ export const SwipeableActivity = forwardRef<SwipeableActivityRef, SwipeableActiv
       const { translationX, state } = event.nativeEvent;
 
       if (state === State.BEGAN) {
-        // Set offset so gesture continues from current position
         translateX.setOffset(offsetX.current);
         translateX.setValue(0);
-        // Notify parent that this item is being swiped
         onSwipeStart(id);
       }
 
       if (state === State.END) {
-        // Flatten the offset into the value
         translateX.flattenOffset();
-        
         const finalPosition = offsetX.current + translationX;
 
         if (finalPosition < -50) {
-          // Swiped left - Open (show delete)
           Animated.spring(translateX, {
             toValue: -80,
             useNativeDriver: true,
@@ -68,9 +59,7 @@ export const SwipeableActivity = forwardRef<SwipeableActivityRef, SwipeableActiv
             friction: 8,
           }).start();
           offsetX.current = -80;
-          isOpen.current = true;
         } else {
-          // Swiped right or not enough - Close (hide delete)
           Animated.spring(translateX, {
             toValue: 0,
             useNativeDriver: true,
@@ -78,7 +67,6 @@ export const SwipeableActivity = forwardRef<SwipeableActivityRef, SwipeableActiv
             friction: 8,
           }).start();
           offsetX.current = 0;
-          isOpen.current = false;
         }
       }
     };
@@ -93,10 +81,9 @@ export const SwipeableActivity = forwardRef<SwipeableActivityRef, SwipeableActiv
 
     return (
       <View style={styles.container}>
-        {/* Delete button (behind item) */}
         <View style={styles.deleteButtonWrapper}>
           <Pressable style={styles.deleteButton} onPress={handleDelete}>
-            <ThemedText style={styles.deleteButtonText}>Delete</ThemedText>
+            <Text style={styles.deleteButtonText}>Delete</Text>
           </Pressable>
         </View>
 
@@ -109,15 +96,11 @@ export const SwipeableActivity = forwardRef<SwipeableActivityRef, SwipeableActiv
           <Animated.View
             style={[
               styles.activityItem,
-              {
-                transform: [{ translateX }],
-              },
+              { transform: [{ translateX }] },
             ]}
           >
-            <ThemedText style={styles.stepsText}>
-              🚶 {steps.toLocaleString()} steps
-            </ThemedText>
-            <ThemedText style={styles.dateText}>{date}</ThemedText>
+            <Text style={styles.dateText}>{date}</Text>
+            <Text style={styles.stepsText}>Steps: {steps}</Text>
           </Animated.View>
         </PanGestureHandler>
       </View>
@@ -125,13 +108,11 @@ export const SwipeableActivity = forwardRef<SwipeableActivityRef, SwipeableActiv
   }
 );
 
-// Add display name to fix ESLint warning
 SwipeableActivity.displayName = 'SwipeableActivity';
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 5,
-    height: 80,
+    height: 70,
     overflow: 'hidden',
   },
   deleteButtonWrapper: {
@@ -143,33 +124,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   deleteButton: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#F44336',
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 8,
   },
   deleteButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
   },
   activityItem: {
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    backgroundColor: '#FFFFFF',
     padding: 15,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
-    height: 80,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 4,
+    height: 70,
     justifyContent: 'center',
   },
-  stepsText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
   dateText: {
-    fontSize: 14,
-    opacity: 0.7,
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+  },
+  stepsText: {
+    fontSize: 16,
+    color: '#000',
+    fontWeight: '500',
   },
 });

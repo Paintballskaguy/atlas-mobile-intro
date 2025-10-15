@@ -1,13 +1,9 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Image, StyleSheet, Platform, Alert, Pressable } from 'react-native';
+import { StyleSheet, Alert, Pressable, View, Text, ScrollView } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { router } from 'expo-router';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
 import { SwipeableActivity, SwipeableActivityRef } from '@/components/swipeable-activity';
 import { 
   initializeDatabase, 
@@ -43,7 +39,6 @@ export default function HomeScreen() {
   };
 
   const handleSwipeStart = (id: number) => {
-    // Close the previously open item if it's different from the current one
     if (openItemId.current !== null && openItemId.current !== id) {
       const previousItem = itemRefs.current.get(openItemId.current);
       if (previousItem) {
@@ -86,7 +81,6 @@ export default function HomeScreen() {
               await deleteAllActivities();
               await loadActivities();
               openItemId.current = null;
-              Alert.alert('Success', 'All activities have been deleted.');
             } catch (error) {
               Alert.alert('Error', 'Failed to delete activities.');
               console.error(error);
@@ -99,36 +93,28 @@ export default function HomeScreen() {
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    const dateStr = date.toLocaleDateString('en-US', { 
+      month: 'numeric', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+    const timeStr = date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true 
+    });
+    return `${dateStr}, ${timeStr}`;
   };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ParallaxScrollView
-        headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-        headerImage={
-          <Image
-            source={require('@/assets/images/partial-react-logo.png')}
-            style={styles.reactLogo}
-          />
-        }>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="title">Welcome!</ThemedText>
-          <HelloWave />
-        </ThemedView>
-
-        <ThemedView style={styles.stepContainer}>
-          <ThemedText type="subtitle">Your Activities</ThemedText>
-          <ThemedText style={styles.instructionText}>
-            💡 Swipe left on any activity to delete it
-          </ThemedText>
-          
+      <View style={styles.container}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
           {activities.length === 0 ? (
-            <ThemedText style={styles.emptyText}>
-              No activities yet. Add your first one!
-            </ThemedText>
+            <Text style={styles.emptyText}>No activities yet.</Text>
           ) : (
-            <ThemedView style={styles.activitiesContainer}>
+            <View style={styles.activitiesContainer}>
               {activities.map((item) => (
                 <SwipeableActivity
                   key={item.id}
@@ -146,98 +132,70 @@ export default function HomeScreen() {
                   onSwipeStart={handleSwipeStart}
                 />
               ))}
-            </ThemedView>
+            </View>
           )}
-        </ThemedView>
+        </ScrollView>
 
-        <ThemedView style={styles.stepContainer}>
-          <ThemedText type="subtitle">Manage Activities</ThemedText>
-          
-          <Link href="/add-activity" asChild>
-            <Pressable style={styles.addButton}>
-              <ThemedText style={styles.buttonText}>Add activity</ThemedText>
-            </Pressable>
-          </Link>
+        <View style={styles.buttonContainer}>
+          <Pressable 
+            style={styles.addButton}
+            onPress={() => router.push('/add-activity')}
+          >
+            <Text style={styles.buttonText}>Add activity</Text>
+          </Pressable>
 
           <Pressable 
             style={styles.deleteButton}
             onPress={handleDeleteAll}
           >
-            <ThemedText style={styles.buttonText}>Delete all activities</ThemedText>
+            <Text style={styles.buttonText}>Delete all activities</Text>
           </Pressable>
-        </ThemedView>
-
-        <ThemedView style={styles.stepContainer}>
-          <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-          <ThemedText>
-            Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-            Press{' '}
-            <ThemedText type="defaultSemiBold">
-              {Platform.select({
-                ios: 'cmd + d',
-                android: 'cmd + m',
-                web: 'F12',
-              })}
-            </ThemedText>{' '}
-            to open developer tools.
-          </ThemedText>
-        </ThemedView>
-      </ParallaxScrollView>
+        </View>
+      </View>
     </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  scrollView: {
+    flex: 1,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  contentContainer: {
+    padding: 20,
   },
-  instructionText: {
-    fontSize: 14,
-    fontStyle: 'italic',
-    opacity: 0.7,
-    marginBottom: 5,
+  activitiesContainer: {
+    gap: 10,
   },
   emptyText: {
     textAlign: 'center',
-    marginVertical: 20,
+    marginTop: 50,
     fontSize: 16,
-    opacity: 0.6,
+    color: '#666',
   },
-  activitiesContainer: {
-    marginVertical: 10,
+  buttonContainer: {
+    padding: 20,
+    gap: 10,
+    backgroundColor: '#F5F5F5',
   },
   addButton: {
-    marginTop: 15,
+    backgroundColor: '#00BFA5',
     paddingVertical: 15,
-    paddingHorizontal: 30,
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
+    borderRadius: 4,
     alignItems: 'center',
   },
   deleteButton: {
-    marginTop: 10,
+    backgroundColor: '#F44336',
     paddingVertical: 15,
-    paddingHorizontal: 30,
-    backgroundColor: '#FF3B30',
-    borderRadius: 8,
+    borderRadius: 4,
     alignItems: 'center',
   },
   buttonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '500',
   },
 });

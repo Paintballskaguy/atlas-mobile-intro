@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { StyleSheet, Pressable, TextInput, Alert } from 'react-native';
+import { StyleSheet, Pressable, TextInput, Alert, View, Text } from 'react-native';
 import { router } from 'expo-router';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { insertActivity } from '@/database/database';
 
 export default function AddActivityScreen() {
@@ -10,7 +8,6 @@ export default function AddActivityScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddActivity = async () => {
-    // Validate input
     const stepsNumber = parseInt(steps);
     if (isNaN(stepsNumber) || stepsNumber <= 0) {
       Alert.alert('Invalid Input', 'Please enter a valid number of steps');
@@ -20,16 +17,9 @@ export default function AddActivityScreen() {
     setIsSubmitting(true);
     
     try {
-      // Get current timestamp (in seconds)
       const currentTimestamp = Math.floor(Date.now() / 1000);
-      
-      // Insert into database
       await insertActivity(stepsNumber, currentTimestamp);
-      
-      Alert.alert('Success', 'Activity added successfully!');
       setSteps('');
-      
-      // Go back to home screen
       router.back();
     } catch (error) {
       Alert.alert('Error', 'Failed to add activity');
@@ -40,92 +30,79 @@ export default function AddActivityScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>Add Activity</ThemedText>
-      <ThemedText style={styles.subtitle}>Record your daily steps</ThemedText>
+    <View style={styles.container}>
+      <Text style={styles.title}>Add Activity</Text>
       
-      <ThemedView style={styles.formContainer}>
-        <ThemedText style={styles.label}>Number of Steps:</ThemedText>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., 2837"
-          keyboardType="numeric"
-          value={steps}
-          onChangeText={setSteps}
-          placeholderTextColor="#999"
-        />
-      </ThemedView>
+      <TextInput
+        style={styles.input}
+        placeholder="Enter steps"
+        keyboardType="numeric"
+        value={steps}
+        onChangeText={setSteps}
+        placeholderTextColor="#999"
+      />
 
       <Pressable 
         style={[styles.button, styles.addButton, isSubmitting && styles.buttonDisabled]} 
         onPress={handleAddActivity}
         disabled={isSubmitting}
       >
-        <ThemedText style={styles.buttonText}>
+        <Text style={styles.buttonText}>
           {isSubmitting ? 'Adding...' : 'Add Activity'}
-        </ThemedText>
+        </Text>
       </Pressable>
 
-      <Pressable style={[styles.button, styles.backButton]} onPress={() => router.back()}>
-        <ThemedText style={styles.buttonText}>Go back</ThemedText>
+      <Pressable 
+        style={[styles.button, styles.backButton]} 
+        onPress={() => router.back()}
+      >
+        <Text style={styles.buttonText}>Go back</Text>
       </Pressable>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
     padding: 20,
+    justifyContent: 'center',
   },
   title: {
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 16,
-    marginBottom: 40,
-    textAlign: 'center',
-  },
-  formContainer: {
-    width: '100%',
-    maxWidth: 400,
-    marginBottom: 30,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
+    fontSize: 24,
     fontWeight: '600',
+    marginBottom: 30,
+    textAlign: 'center',
+    color: '#000',
   },
   input: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 15,
-    fontSize: 18,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#E0E0E0',
+    borderRadius: 4,
+    padding: 15,
+    fontSize: 16,
+    marginBottom: 20,
   },
   button: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
-    minWidth: 200,
+    paddingVertical: 15,
+    borderRadius: 4,
     alignItems: 'center',
-    marginVertical: 8,
+    marginBottom: 10,
   },
   addButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#00BFA5',
   },
   backButton: {
-    backgroundColor: '#34C759',
+    backgroundColor: '#F44336',
   },
   buttonDisabled: {
     backgroundColor: '#999',
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
