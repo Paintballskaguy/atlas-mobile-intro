@@ -1,6 +1,6 @@
-import { useRef } from 'react';
+import { useRef, useImperativeHandle, forwardRef } from 'react';
 import { StyleSheet, Animated, Pressable, View } from 'react-native';
-import { PanGestureHandler } from 'react-native-gesture-handler';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { ThemedText } from '@/components/themed-text';
 
 interface SwipeableActivityProps {
@@ -8,101 +8,125 @@ interface SwipeableActivityProps {
   steps: number;
   date: string;
   onDelete: (id: number) => void;
+  onSwipeStart: (id: number) => void;
 }
 
-export function SwipeableActivity({ id, steps, date, onDelete }: SwipeableActivityProps) {
-  const translateX = useRef(new Animated.Value(0)).current;
+export interface SwipeableActivityRef {
+  close: () => void;
+}
 
-  const onGestureEvent = Animated.event(
-    [{ nativeEvent: { translationX: translateX } }],
-    { useNativeDriver: true }
-  );
+export const SwipeableActivity = forwardRef<SwipeableActivityRef, SwipeableActivityProps>(
+  ({ id, steps, date, onDelete, onSwipeStart }, ref) => {
+    const translateX = useRef(new Animated.Value(0)).current;
+    const offsetX = useRef(0);
+    const isOpen = useRef(false);
 
-  const onHandlerStateChange = (event: any) => {
-    const { translationX, state } = event.nativeEvent;
-    
-    // State 5 is END
-    if (state === 5) {
-      if (translationX < -50) {
-        // Swiped left enough - show delete button
-        Animated.spring(translateX, {
-          toValue: -80,
-          useNativeDriver: true,
-          tension: 80,
-          friction: 8,
-        }).start();
-      } else if (translationX > 50) {
-        // Swiped right enough - hide delete button
+    // Expose close method to parent
+    useImperativeHandle(ref, () => ({
+      close: () => {
         Animated.spring(translateX, {
           toValue: 0,
           useNativeDriver: true,
           tension: 80,
           friction: 8,
         }).start();
-      } else {
-        // Not swiped enough - return to current state
-        const currentValue = (translateX as any)._value;
-        Animated.spring(translateX, {
-          toValue: currentValue < -40 ? -80 : 0,
-          useNativeDriver: true,
-          tension: 80,
-          friction: 8,
-        }).start();
+        translateX.setOffset(0);
+        translateX.setValue(0);
+        offsetX.current = 0;
+        isOpen.current = false;
+      },
+    }));
+
+    const onGestureEvent = Animated.event(
+      [{ nativeEvent: { translationX: translateX } }],
+      { useNativeDriver: true }
+    );
+
+    const onHandlerStateChange = (event: any) => {
+      const { translationX, state } = event.nativeEvent;
+
+      if (state === State.BEGAN) {
+        // Set offset so gesture continues from current position
+        translateX.setOffset(offsetX.current);
+        translateX.setValue(0);
+        // Notify parent that this item is being swiped
+        onSwipeStart(id);
       }
-    }
-  };
 
-  const handleDelete = () => {
-    // Animate out before deleting
-    Animated.timing(translateX, {
-      toValue: -400,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      onDelete(id);
-    });
-  };
+      if (state === State.END) {
+        // Flatten the offset into the value
+        translateX.flattenOffset();
+        
+        const finalPosition = offsetX.current + translationX;
 
-  return (
-    <View style={styles.container}>
-      {/* Delete button container - positioned behind */}
-      <View style={styles.deleteButtonWrapper}>
-        <Pressable style={styles.deleteButton} onPress={handleDelete}>
-          <ThemedText style={styles.deleteButtonText}>Delete</ThemedText>
-        </Pressable>
-      </View>
+        if (finalPosition < -50) {
+          // Swiped left - Open (show delete)
+          Animated.spring(translateX, {
+            toValue: -80,
+            useNativeDriver: true,
+            tension: 80,
+            friction: 8,
+          }).start();
+          offsetX.current = -80;
+          isOpen.current = true;
+        } else {
+          // Swiped right or not enough - Close (hide delete)
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            tension: 80,
+            friction: 8,
+          }).start();
+          offsetX.current = 0;
+          isOpen.current = false;
+        }
+      }
+    };
 
-      {/* Swipeable activity item - covers delete button by default */}
-      <PanGestureHandler
-        onGestureEvent={onGestureEvent}
-        onHandlerStateChange={onHandlerStateChange}
-        activeOffsetX={[-10, 10]}
-      >
-        <Animated.View
-          style={[
-            styles.activityItem,
-            {
-              transform: [
-                {
-                  translateX: translateX.interpolate({
-                    inputRange: [-1000, 0],
-                    outputRange: [-1000, 0],
-                    extrapolate: 'clamp',
-                  }),
-                },
-              ],
-            },
-          ]}
+    const handleDelete = () => {
+      Animated.timing(translateX, {
+        toValue: -400,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => onDelete(id));
+    };
+
+    return (
+      <View style={styles.container}>
+        {/* Delete button (behind item) */}
+        <View style={styles.deleteButtonWrapper}>
+          <Pressable style={styles.deleteButton} onPress={handleDelete}>
+            <ThemedText style={styles.deleteButtonText}>Delete</ThemedText>
+          </Pressable>
+        </View>
+
+        <PanGestureHandler
+          onGestureEvent={onGestureEvent}
+          onHandlerStateChange={onHandlerStateChange}
+          activeOffsetX={[-10, 10]}
+          failOffsetY={[-10, 10]}
         >
-          <ThemedText style={styles.stepsText}>
-            🚶 {steps.toLocaleString()} steps
-          </ThemedText>
-          <ThemedText style={styles.dateText}>{date}</ThemedText>
-        </Animated.View>
-      </PanGestureHandler>
-    </View>
-  );
-}
+          <Animated.View
+            style={[
+              styles.activityItem,
+              {
+                transform: [{ translateX }],
+              },
+            ]}
+          >
+            <ThemedText style={styles.stepsText}>
+              🚶 {steps.toLocaleString()} steps
+            </ThemedText>
+            <ThemedText style={styles.dateText}>{date}</ThemedText>
+          </Animated.View>
+        </PanGestureHandler>
+      </View>
+    );
+  }
+);
+
+// Add display name to fix ESLint warning
+SwipeableActivity.displayName = 'SwipeableActivity';
 
 const styles = StyleSheet.create({
   container: {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Image, StyleSheet, Platform, Alert, Pressable } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -8,7 +8,7 @@ import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Link } from 'expo-router';
-import { SwipeableActivity } from '@/components/swipeable-activity';
+import { SwipeableActivity, SwipeableActivityRef } from '@/components/swipeable-activity';
 import { 
   initializeDatabase, 
   getAllActivities, 
@@ -24,6 +24,8 @@ interface Activity {
 
 export default function HomeScreen() {
   const [activities, setActivities] = useState<Activity[]>([]);
+  const openItemId = useRef<number | null>(null);
+  const itemRefs = useRef<Map<number, SwipeableActivityRef>>(new Map());
 
   useEffect(() => {
     initializeDatabase();
@@ -40,10 +42,22 @@ export default function HomeScreen() {
     setActivities(data as Activity[]);
   };
 
+  const handleSwipeStart = (id: number) => {
+    // Close the previously open item if it's different from the current one
+    if (openItemId.current !== null && openItemId.current !== id) {
+      const previousItem = itemRefs.current.get(openItemId.current);
+      if (previousItem) {
+        previousItem.close();
+      }
+    }
+    openItemId.current = id;
+  };
+
   const handleDeleteActivity = async (id: number) => {
     try {
       await deleteActivity(id);
       await loadActivities();
+      openItemId.current = null;
     } catch (error) {
       Alert.alert('Error', 'Failed to delete activity.');
       console.error(error);
@@ -71,6 +85,7 @@ export default function HomeScreen() {
             try {
               await deleteAllActivities();
               await loadActivities();
+              openItemId.current = null;
               Alert.alert('Success', 'All activities have been deleted.');
             } catch (error) {
               Alert.alert('Error', 'Failed to delete activities.');
@@ -117,10 +132,18 @@ export default function HomeScreen() {
               {activities.map((item) => (
                 <SwipeableActivity
                   key={item.id}
+                  ref={(ref) => {
+                    if (ref) {
+                      itemRefs.current.set(item.id, ref);
+                    } else {
+                      itemRefs.current.delete(item.id);
+                    }
+                  }}
                   id={item.id}
                   steps={item.steps}
                   date={formatDate(item.date)}
                   onDelete={handleDeleteActivity}
+                  onSwipeStart={handleSwipeStart}
                 />
               ))}
             </ThemedView>
