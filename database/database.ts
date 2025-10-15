@@ -41,3 +41,10 @@ export async function deleteAllActivities() {
   const result = await db.runAsync('DELETE FROM activities;');
   return result;
 }
+
+// Delete single activity by ID
+export async function deleteActivity(id: number) {
+  const db = await SQLite.openDatabaseAsync(DB_NAME);
+  const result = await db.runAsync('DELETE FROM activities WHERE id = ?;', id);
+  return result;
+}
