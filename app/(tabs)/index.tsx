@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Image, StyleSheet, Platform, FlatList, Alert, Pressable } from 'react-native';
+import { Image, StyleSheet, Platform, Alert, Pressable } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { HelloWave } from '@/components/hello-wave';
@@ -92,23 +92,17 @@ export default function HomeScreen() {
             No activities yet. Add your first one!
           </ThemedText>
         ) : (
-          <ThemedView style={styles.listContainer}>
-            <FlatList
-              data={activities}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => (
-                <ThemedView style={styles.activityItem}>
-                  <ThemedText style={styles.stepsText}>
-                    🚶 {item.steps.toLocaleString()} steps
-                  </ThemedText>
-                  <ThemedText style={styles.dateText}>
-                    {formatDate(item.date)}
-                  </ThemedText>
-                </ThemedView>
-              )}
-              showsVerticalScrollIndicator={true}
-              nestedScrollEnabled={true}
-            />
+          <ThemedView style={styles.activitiesContainer}>
+            {activities.map((item) => (
+              <ThemedView key={item.id} style={styles.activityItem}>
+                <ThemedText style={styles.stepsText}>
+                  🚶 {item.steps.toLocaleString()} steps
+                </ThemedText>
+                <ThemedText style={styles.dateText}>
+                  {formatDate(item.date)}
+                </ThemedText>
+              </ThemedView>
+            ))}
           </ThemedView>
         )}
       </ThemedView>
@@ -172,8 +166,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     opacity: 0.6,
   },
-  listContainer: {
-    height: 300,
+  activitiesContainer: {
     marginVertical: 10,
   },
   activityItem: {
