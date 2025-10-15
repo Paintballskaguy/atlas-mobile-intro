@@ -34,3 +34,10 @@ export async function insertActivity(steps: number, date: number) {
   );
   return result;
 }
+
+// Delete all activities
+export async function deleteAllActivities() {
+  const db = await SQLite.openDatabaseAsync(DB_NAME);
+  const result = await db.runAsync('DELETE FROM activities;');
+  return result;
+}
